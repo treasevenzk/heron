@@ -9,6 +9,7 @@ from Heron.utils import *
 from Heron.schedule.sched_op import get_op_methods, sched_via_rule
 from Heron.schedule.constraints import KnobManager
 from Heron.schedule.context import buildContext
+import sys
 
 class Task:
     def __init__(self, name, opfunc, args, target, target_host):

@@ -1,6 +1,7 @@
 import tvm.te as te
 from tvm.topi.cuda.tensor_intrin import *
 from Heron.utils import *
+import sys
 
 def split(ctx, stage, ax, knob_key, nparts = None, factor = None, update_dep_graph = True):
     ax_key = genKey("L", stage.op.name, ax.var.name)
@@ -13,9 +14,12 @@ def split(ctx, stage, ax, knob_key, nparts = None, factor = None, update_dep_gra
         axo, axi = stage.split(ax, factor = factor)
         strs =  "%s, %s = s[%s].split(%s, factor = %d)\n"%(
                 getAxname(axo), getAxname(axi), getStageName(stage), getAxname(ax), factor)
-    ax_key = genKey("L", stage.op.name, ax.var.name)
-    axo_key = genKey("L", stage.op.name, axo.var.name)
-    axi_key = genKey("L", stage.op.name, axi.var.name)
+    #ax_key = genKey("L", stage.op.name, ax.var.name)
+    #axo_key = genKey("L", stage.op.name, axo.var.name)
+    #axi_key = genKey("L", stage.op.name, axi.var.name)
+    ax_key = stage.op.name + "_" + ax.var.name
+    axo_key = stage.op.name + "_" + axo.var.name
+    axi_key = stage.op.name + "_" + axi.var.name
     ctx.addSchedDesc(strs)
     ctx.knob_manager.updateAxisParents(stage.op.name, axo.var.name, [ax.var.name])
     ctx.knob_manager.updateAxisParents(stage.op.name, axi.var.name, [ax.var.name])
@@ -60,7 +64,8 @@ def fuse(ctx, stage, tups, update_dep_graph = True):
     all_names = [x.var.name for x in tups]
     if len(tups) > 1:
         ctx.knob_manager.updateAxisParents(stage.op.name, fused.var.name, all_names)
-    key = genKey("L", stage.op.name, fused.var.name)
+    #key = genKey("L", stage.op.name, fused.var.name)
+    key = stage.op.name + "_" + fused.var.name
     ctx.scheduled_axes.append(key)
     if stage.op.name in ctx.compute_pos_names.keys():
         poses = ctx.compute_pos_names[stage.op.name]
@@ -70,8 +75,10 @@ def fuse(ctx, stage, tups, update_dep_graph = True):
             back = poses[idx+1:]
             ctx.compute_pos_names[stage.op.name] = front + [fused.var.name] + back
     if update_dep_graph and len(tups) > 1:
-        keys = [genKey("L", stage.op.name, ax.var.name) for ax in tups]
-        fused_key = genKey("L", stage.op.name, fused.var.name)
+        #keys = [genKey("L", stage.op.name, ax.var.name) for ax in tups]
+        #fused_key = genKey("L", stage.op.name, fused.var.name)  这里配置字符串有问题
+        keys = [stage.op.name + "_" + ax.var.name for ax in tups]
+        fused_key = stage.op.name + "_" + fused.var.name
         ctx.knob_manager.addFuse(keys, fused_key)
     return fused
 
@@ -81,7 +88,8 @@ def bind(ctx, stage, ax, threadtype):
     strs = "s[%s].bind(%s, te.thread_axis(\"%s\"))\n"%(
             getStageName(stage), getAxname(ax), threadtype
             )
-    key = genKey("L", stage.op.name, ax.var.name)
+    # key = genKey("L", stage.op.name, ax.var.name)
+    key = stage.op.name + "_" + ax.var.name
     ctx.addSchedDesc(strs)
     ctx.scheduled_axes.append(key)
     return tx
@@ -90,7 +98,8 @@ def unroll(ctx, stage, ax):
     stage.unroll(ax)
     strs = "s[%s].unroll(%s)\n"%(
             getStageName(stage), str(getAxname(ax)))
-    key = genKey("L", stage.op.name, ax.var.name)
+    # key = genKey("L", stage.op.name, ax.var.name)
+    key = stage.op.name + "_" + ax.var.name
     ctx.scheduled_axes.append(key)
     ctx.addSchedDesc(strs)
     ctx.unrolled_stages.append(stage.op.name)
@@ -110,7 +119,8 @@ def unrollPragma(ctx, stage, ax, num, explicit):
                 getStageName(stage), str(getAxname(ax))
                 )
     key = genKey("L", stage.op.name, ax.var.name)
-    ctx.scheduled_axes.append(key)
+    ax_key = stage.op.name + "_" + ax.var.name
+    ctx.scheduled_axes.append(ax_key)
     ctx.addSchedDesc(strs)
     ctx.unrolled_stages.append(stage.op.name)
     ctx.axis_anotations[key] = "unroll"
@@ -118,7 +128,8 @@ def unrollPragma(ctx, stage, ax, num, explicit):
 def vectorize(ctx, stage, ax):
     stage.vectorize(ax)
     key = genKey("L", stage.op.name, ax.var.name)
-    ctx.scheduled_axes.append(key)
+    ax_key = stage.op.name + "_" + ax.var.name
+    ctx.scheduled_axes.append(ax_key)
     strs = "s[%s].vectorize(%s)\n"%(getStageName(stage), str(getAxname(ax)))
     ctx.addSchedDesc(strs)
     ctx.vectorized_stages.append(stage.op.name)

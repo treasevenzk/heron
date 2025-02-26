@@ -2,6 +2,7 @@ from ortools.sat.python import cp_model
 import time
 import random
 from Heron.utils import removedot
+import sys
 
 class Variable:
     def __init__(self, name, low, up, item, defv):

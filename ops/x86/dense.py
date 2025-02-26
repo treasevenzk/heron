@@ -22,7 +22,7 @@ def heron_dense(ctx, M, K, N, in_dtype, out_dtype):
             'name' : 'x86_dot',
             'stage_orgination' : [('dense', 'addCacheWriteGlobal')],
             'com' : ('dense.global', (1, 0)),
-            'intrin': [dot_16x1x16_uint8_int8_int32_cascadelake, 16, 4]
+            'intrin': [dot_16x1x16_uint8_int8_int32_skylake, 16, 4]
             }
     ctx.set_info(info)
     axis_map = {

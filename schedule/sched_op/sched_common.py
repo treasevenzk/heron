@@ -3,6 +3,7 @@ import tvm.te as te
 from Heron.utils import *
 from Heron.schedule.primitives import *
 from .ana_common import *
+import sys
 
 class schedOp:
     def __init__(self, name):
@@ -12,7 +13,8 @@ class schedOp:
         stage = mapNametoStage(s, stage_name)
         keys = []; outer = []; inner = [] 
         for ax in axes:
-            key = genKey("P", stage_name, str(ax.var.name), param_name = self.name)
+            # key = genKey("P", stage_name, str(ax.var.name), param_name = self.name)
+            key = stage_name + "_" + self.name  # 上面那种写法是错误的，现在的写法是正确的
             up = ctx.knob_manager.get_axis_extent(s, stage_name, ax.var.name)
             ctx.knob_manager.define_value(key, 1, up, 1, True)
             ctx.knob_manager.addRawCandidates(key, 
@@ -37,7 +39,8 @@ class schedOp:
     def findUnscheduledAxes(self, ctx, stage_name, axes):
         spatial_ = []; reduce_ = []
         for ax in axes:
-            key = genKey("L", stage_name, str(ax.var.name))
+            # key = genKey("L", stage_name, str(ax.var.name))
+            key = stage_name + "_" + ax.var.name
             if key in ctx.scheduled_axes:
                 continue
             if ax.iter_type == ax.DataPar:
@@ -49,7 +52,8 @@ class schedOp:
     def findUnscheduledSpatialAxes(self, ctx, stage_name, axes):
         res = []
         for ax in axes:
-            key = genKey("L", stage_name, str(ax.var.name))
+            # key = genKey("L", stage_name, str(ax.var.name)) 这里修改的原因的是因为我将scheduled_axes最开始的时候修改了
+            key = stage_name + "_" + ax.var.name
             if key in ctx.scheduled_axes or ax.iter_type != ax.DataPar:
                 continue
             res.append(ax)
@@ -60,7 +64,8 @@ class schedOp:
         axes = stage.leaf_iter_vars
         res = []
         for ax in axes:
-            key = genKey("L", stage_name, str(ax.var.name))
+            # key = genKey("L", stage_name, str(ax.var.name))
+            key = stage_name + "_" + ax.var.name
             if key  in ctx.scheduled_axes:
                 # Only for successive axes
                 if len(res) > 0:
@@ -83,7 +88,8 @@ class schedOp:
         return res
     
     def define_com_pos(self, src_stage_name, stage, pos_type, ctx):
-        key = genKey("P", stage.op.name, param_name = pos_type)
+        # key = genKey("P", stage.op.name, param_name = pos_type)
+        key = stage.op.name + "_" + pos_type # 上面那种写法是错误的，现在的写法是正确的
         ctx.knob_manager.define_value(key, 0, 10, 0, True)
         pos_name = stage.leaf_iter_vars[-1].var.name
         ctx.compute_poses[src_stage_name] = (stage.op.name, key)
@@ -175,7 +181,8 @@ class fuseAllOp(schedOp):
         stage = mapNametoStage(s, stage_name)
         axes = []
         for ax in stage.leaf_iter_vars:
-            key = genKey("L", stage_name, str(ax.var.name))
+            # key = genKey("L", stage_name, str(ax.var.name))
+            key = stage_name + "_" + ax.var.name
             if key in ctx.scheduled_axes:
                 continue
             axes.append(ax)
@@ -245,15 +252,27 @@ class startOp(schedOp):
                 length_keys.append(prod_keys[0])
             else:
                 length_keys.append(1) 
-        dst_key = genKey("L", stage_name, ax_name)
+        # 字符串转变由原来的'L#ST:dense,AX:i.inner'转变为'dense_i.inner'
+        select_length_keys = []
+        for len_k in length_keys:
+            if isinstance(len_k, int):
+                select_length_keys.append(len_k)
+            else:
+                a, b, c = len_k.split(":")
+                m, n = b.split(",")
+                select_length_keys.append(m + "_" + c)
+
+        #dst_key = genKey("L", stage_name, ax_name)
+        dst_key = stage_name + "_" + ax_name
         ctx.knob_manager.define_value(dst_key, 1, root_ax.dom.extent.value, 1)
         if dst_key in coe:
-            tmp_key = genKey("O", stage_name, ax_name, others = "tmp")
+            # tmp_key = genKey("O", stage_name, ax_name, others = "tmp")
+            tmp_key = stage_name + "_" + ax_name + "_tmp" # 这种写法不知道正不正确，暂时先修改成这样
             ctx.knob_manager.define_value(tmp_key, 1, root_ax.dom.extent.value, 1)
-            ctx.knob_manager.addSelect(length_keys, pos_key, tmp_key)
+            ctx.knob_manager.addSelect(select_length_keys, pos_key, tmp_key)
             ctx.knob_manager.addProd([tmp_key, coe[dst_key]], dst_key)
         else:
-            ctx.knob_manager.addSelect(length_keys, pos_key, dst_key)
+            ctx.knob_manager.addSelect(select_length_keys, pos_key, dst_key)
 
 
     def genAxesLength(self, s, stage_name, ctx):
@@ -315,7 +334,8 @@ class unrollPragmaOp(schedOp):
     def perform(self, s, stage_name, ctx):
         ctx.addSchedDesc("\n## Unroll pragma \n", True)
         stage = mapNametoStage(s, stage_name)
-        unroll_key = genKey("P", stage_name, param_name = "unroll_pragma")
+        # unroll_key = genKey("P", stage_name, param_name = "unroll_pragma")
+        unroll_key = stage_name + "_unroll_pragma" 
         ctx.knob_manager.define_value(unroll_key, 0, 5, 0, True)
         ctx.knob_manager.addRawCandidates(unroll_key, [0, 1, 2, 3, 4, 5])
         axes = stage.leaf_iter_vars
@@ -331,6 +351,4 @@ class unrollPragmaOp(schedOp):
         ctx.addSTileStucture(stage_name, [x.var.name for x in outer], "unroll")
         ctx.unroll_pragma_desc[stage_name] = (outer[0].var.name, unroll_key)
         ctx.unrolled_stages.append(stage_name)
-
-
 

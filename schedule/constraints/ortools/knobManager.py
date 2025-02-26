@@ -5,6 +5,7 @@ from Heron.utils import *
 import numpy as np
 from .solver import Solver
 from .primitives import *
+import sys
 def str_vec(vec):
     strs = "["
     for i in vec:
@@ -98,6 +99,10 @@ class KnobManager:
             return
         self.solver.primitives.append(ProdTwo([self.get_ax(ax_key), [self.get_ax(axo_key), self.get_ax(axi_key)]]))
         self.solver.primitives.append(EQ([self.get_ax(axo_key), knob]))
+        m, n = axo_key.split("_")
+        axo_key = genKey("L", m, n)
+        m, n = axi_key.split("_")
+        axi_key = genKey("L", m, n)
         self.axis_brother[axi_key] = axo_key
         self.axis_brother[axo_key] = axi_key
 
@@ -199,9 +204,9 @@ class KnobManager:
         keys = []
         for i in range(up + 1):
             key = knob_key + '_select%d'%i
-            assert "P#" in knob_key
-            key = key.replace("P#", "O#")
-            self.define_value(key, 0, 1, 0)
+            #assert "P#" in knob_key
+            #key = key.replace("P#", "O#")
+            self.define_value(key, 0, 1, 0)  ### 这里写的还是有问题
             self.solver.primitives.append(EQ([val_key, cand_keys[i]], cond = key))
             self.solver.primitives.append(EQ([knob_key, i], cond = key))
             keys.append(key)
@@ -265,7 +270,9 @@ class KnobManager:
         elif ax in self.axis_ori_lenth and not ax in self.staged_fused_axes:
             res = self.axis_ori_lenth[ax]
         else:
-            extent = self.get_ax_key_extent(ax)
+            m, n = ax.split("_")
+            key = genKey("L", m, n)
+            extent = self.get_ax_key_extent(key)
             res = self.define_value(ax, 1, extent, 1)
         assert res != None
         return res
