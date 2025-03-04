@@ -77,22 +77,22 @@ class XGBoostCostModel:
         dtrain = xgb.DMatrix(x_train[index], y_train[index])
         self._sample_size = len(x_train)
 
+        callback = CustomCallback(
+            stopping_rounds=20,
+            metric="tr-a-recall@%d" % plan_size,
+            evals=[(dtrain, "tr")],
+            maximize=True,
+            fevals=[
+                xgb_average_recalln_curve_score(plan_size),
+            ],
+            verbose_eval=self.log_interval,
+        )
+
         self.bst = xgb.train(
             self.xgb_params,
             dtrain,
             num_boost_round=8000,
-            callbacks=[
-                custom_callback(
-                    stopping_rounds=20,
-                    metric="tr-a-recall@%d" % plan_size,
-                    evals=[(dtrain, "tr")],
-                    maximize=True,
-                    fevals=[
-                        xgb_average_recalln_curve_score(plan_size),
-                    ],
-                    verbose_eval=self.log_interval,
-                )
-            ],
+            callbacks=[callback],
         )
 
 
@@ -103,115 +103,113 @@ class XGBoostCostModel:
             return np.ones(len(samples))
         return self.bst.predict(dtest, output_margin=output_margin)
 
-def custom_callback(
-    stopping_rounds, metric, fevals, evals=(), log_file=None, maximize=False, verbose_eval=True
-):
-    """callback function for xgboost to support multiple custom evaluation functions"""
-    # pylint: disable=import-outside-toplevel
-    from xgboost.core import EarlyStopException
-    from xgboost.callback import _fmt_metric
+from xgboost.callback import TrainingCallback
+from xgboost.callback import EvaluationMonitor
 
-    try:
-        from xgboost.training import aggcv
-    except ImportError:
-        from xgboost.callback import _aggcv as aggcv
+class CustomCallback(TrainingCallback):
+    def __init__(self, stopping_rounds, metric, fevals, evals=(), log_file=None, maximize=None, verbose_eval=True):
+        self.stopping_rounds = stopping_rounds
+        self.metric = metric
+        self.fevals = fevals
+        self.evals = evals
+        self.log_file = log_file
+        self.maximize = maximize
+        self.verbose_eval = verbose_eval
+        self.state = {}
+        self.metric_shortname = metric.split("-")[1]
 
-    state = {}
-    metric_shortname = metric.split("-")[1]
+    def before_training(self, model):
+        self.state["maximize_score"] = self.maximize
+        self.state["best_iteration"] = 0
+        self.state["best_score"] = float("-inf") if self.maximize else float("inf")
 
-    def init(env):
-        """internal function"""
-        bst = env.model
-
-        state["maximize_score"] = maximize
-        state["best_iteration"] = 0
-        if maximize:
-            state["best_score"] = float("-inf")
+        if model.attr("best_score") is not None:
+            self.state["best_score"] = float(model.attr("best_score"))
+            self.state["best_iteration"] = int(model.attr("best_iteration"))
+            self.state["best_msg"] = model.attr("best_msg")
         else:
-            state["best_score"] = float("inf")
+            model.set_attr(best_iteration=str(self.state["best_iteration"]))
+            model.set_attr(best_score=str(self.state["best_score"]))
 
-        if bst is not None:
-            if bst.attr("best_score") is not None:
-                state["best_score"] = float(bst.attr("best_score"))
-                state["best_iteration"] = int(bst.attr("best_iteration"))
-                state["best_msg"] = bst.attr("best_msg")
-            else:
-                bst.set_attr(best_iteration=str(state["best_iteration"]))
-                bst.set_attr(best_score=str(state["best_score"]))
-        else:
-            assert env.cvfolds is not None
+        return model
 
-    def callback(env):
-        """internal function"""
-        if not state:
-            init(env)
+    def after_iteration(self, model, epoch, evals_log):
+        try:
+            from xgboost.training import aggcv
+        except ImportError:
+            from xgboost.callback import _aggcv as aggcv
 
-        bst = env.model
-        i = env.iteration
-        cvfolds = env.cvfolds
+        if not self.state:
+            self.before_training(model)
 
         res_dict = {}
 
-        ##### evaluation #####
-        if cvfolds is not None:
-            for feval in fevals:
-                tmp = aggcv([f.eval(i, feval) for f in cvfolds])
-                for k, mean, std in tmp:
-                    res_dict[k] = [mean, std]
-        else:
-            for feval in fevals:
-                bst_eval = bst.eval_set(evals, i, feval)
-                res = [x.split(":") for x in bst_eval.split()]
-                for kv in res[1:]:
-                    res_dict[kv[0]] = [float(kv[1])]
-
+        for feval in self.fevals:
+            bst_eval = []
+            for dataset, name in self.evals:
+                bst_eval.append(feval(model.predict(dataset), dataset))
+            for key, val in bst_eval:
+                res_dict[key] = [val]
+        
         eval_res = []
         keys = list(res_dict.keys())
-        keys.sort(key=lambda x: x if metric_shortname not in x else "a" + x)
+        keys.sort(key=lambda x: x if self.metric_shortname not in x else "a" + x)
         for key in keys:
             v = res_dict[key]
             eval_res.append([key] + v)
 
-        ##### print eval result #####
-        infos = ["XGB iter: %3d" % i]
-        for item in eval_res:
-            if "null" in item[0]:
-                continue
-            infos.append("%s: %.6f" % (item[0], item[1]))
+        if self.verbose_eval:
+            infos = ["XGB iter: %3d" % epoch]
+            for item in eval_res:
+                if "null" in item[0]:
+                    continue
+                infos.append("%s: %.6f" % (item[0], item[1]))
+            print("\t".join(infos))
 
-        if log_file:
-            with open(log_file, "a") as fout:
+        if self.log_file:
+             with open(self.log_file, "a") as fout:
                 fout.write("\t".join(infos) + "\n")
 
-        ##### choose score and do early stopping #####
         score = None
         for item in eval_res:
-            if item[0] == metric:
+            if item[0] == self.metric:
                 score = item[1]
                 break
-        assert score is not None
+        
+        if score is None and eval_res:
+            score = eval_res[0][1]
+            print(f"Warning: Metric '{self.metric}' not found, using '{eval_res[0][0]}' instead.")
 
-        best_score = state["best_score"]
-        best_iteration = state["best_iteration"]
-        maximize_score = state["maximize_score"]
+        if score is None:
+            return False
+
+        best_score = self.state["best_score"]
+        best_iteration = self.state["best_iteration"]
+        maximize_score = self.state["maximize_score"]
+
         if (maximize_score and score > best_score) or (not maximize_score and score < best_score):
-            msg = "[%d] %s" % (env.iteration, "\t".join([_fmt_metric(x) for x in eval_res]))
-            state["best_msg"] = msg
-            state["best_score"] = score
-            state["best_iteration"] = env.iteration
-            # save the property to attributes, so they will occur in checkpoint.
-            if env.model is not None:
-                env.model.set_attr(
-                    best_score=str(state["best_score"]),
-                    best_iteration=str(state["best_iteration"]),
-                    best_msg=state["best_msg"],
-                )
-        elif env.iteration - best_iteration >= stopping_rounds:
-            best_msg = state["best_msg"]
-            raise EarlyStopException(best_iteration)
-      # print(state)
+            msg_parts = []
+            for item in eval_res:
+                try:
+                    msg_parts.append(f"{item[0]}:{item[1]:.6f}")
+                except:
+                    pass
 
-    return callback
+            msg = f"[{epoch}] {''.join(msg_parts)}"            
+
+            self.state["best_msg"] = msg
+            self.state["best_score"] = score
+            self.state["best_iteration"] = epoch
+
+            model.set_attr(
+                best_score=str(self.state["best_score"]),
+                best_iteration=str(self.state["best_iteration"]),
+                best_msg=self.state["best_msg"],
+            )
+        elif epoch - best_iteration >= self.stopping_rounds:
+            return True
+        
+        return False
 
 
 # feval wrapper for xgboost

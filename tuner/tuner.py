@@ -67,7 +67,7 @@ class Tuner:
             pop = self.epsilon_select(env, all_pop, 0.6, select_num)
             if do_measure and pop != []:
                 samples = self.FilterSamples(pop, env)
-                self.measure(samples, env)
+                self.measure(samples, env)  # 实际在硬件上测量
             measure_e = time.time()
 
             train_s = time.time()
@@ -171,7 +171,7 @@ class Tuner:
         print("Time %f, MAX %f, TOP5_MEAN %f"%(time_point, max_perf, top5_mean))
 
 
-    def FilterSamples(self, samples, env):
+    def FilterSamples(self, samples, env):  # 过滤重复的samples
         codes = set()
         ret = []
         for sample in samples:
