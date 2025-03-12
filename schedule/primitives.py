@@ -94,7 +94,7 @@ def bind(ctx, stage, ax, threadtype):
     ctx.scheduled_axes.append(key)
     return tx
 
-def unroll(ctx, stage, ax):
+def unroll(ctx, stage, ax):  #这个调度原语没有用
     stage.unroll(ax)
     strs = "s[%s].unroll(%s)\n"%(
             getStageName(stage), str(getAxname(ax)))
@@ -135,7 +135,7 @@ def vectorize(ctx, stage, ax):
     ctx.vectorized_stages.append(stage.op.name)
     ctx.axis_anotations[key] = 'vectorize'
 
-def double_buffer(ctx, stage):
+def double_buffer(ctx, stage): #这个调度原语没有用
     stage.double_buffer()
     strs = "s[%s].double_buffer()\n"%(getStageName(stage))
     ctx.addSchedDesc(strs)
@@ -166,7 +166,7 @@ def compute_at(ctx, stage, consumer_stage, consumer_ax):
             )
     ctx.addSchedDesc(strs)
 
-def compute_inline(ctx, stage):
+def compute_inline(ctx, stage):  # 这个调度原语没有用
     stage.compute_inline()
     strs = "s[%s].compute_line()\n"%(getStageName(stage))
     ctx.addSchedDesc(strs)
@@ -241,7 +241,7 @@ def storage_align(ctx, stage, ax, a, b):
     strs = "s[%s].storage_align(%s, %f, %f)\n"%(getStageName(stage), str(getAxname(ax)), a, b)
     ctx.addSchedDesc(strs)
 
-def rfactor(ctx, tensor, ax, s):
+def rfactor(ctx, tensor, ax, s): #这个调度原语没有用
     rf=s.rfactor(tensor, ax)
     strs = "s.rfactor(%s, %s)\n"%((tensor.op.name), str(getAxname(ax)))
     ctx.addSchedDesc(strs)

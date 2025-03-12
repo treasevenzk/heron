@@ -231,6 +231,7 @@ def sched_via_rule(ctx, s):
     ctx.updateAxisLength(s)
     # The schedule each stage in topological order
     stage_ordered = getStageNamesOrdered(s)
+    print(f"stage_ordered: {stage_ordered}")
     for stage_name in stage_ordered:
         ctx.addSched("start", stage_name, s)
         # Apply schedule to stage according to static analysis   
@@ -251,3 +252,18 @@ def sched_via_rule(ctx, s):
         if do_vectorize(s, stage_name, ctx):
             ctx.addSched('vectorize', stage_name, s)
         ctx.addSched("finish", stage_name, s)
+    print("==== finish sched_via_rule ====")
+    print(f"ctx.sched_desc: {ctx.sched_desc}")
+    print(f"ctx.scheduled_axes: {ctx.scheduled_axes}")
+    print(f"ctx.axis_anotations: {ctx.axis_anotations}")
+    print(f"ctx.stile_structres: {ctx.stile_structures}")
+    print(f"ctx.unroll_pragma_desc: {ctx.unroll_pragma_desc}")
+    print(f"ctx.compute_poses: {ctx.compute_poses}")
+    print(f"ctx.compute_pos_names: {ctx.compute_pos_names}")
+    print(f"ctx.knob_manager.axis_parents: {ctx.knob_manager.axis_parents}")
+    print(f"ctx.knob_manager.axis_brother: {ctx.knob_manager.axis_brother}")
+    print(f"ctx.knob_manager.axis_ori_lenth: {ctx.knob_manager.axis_ori_lenth}")
+    print(f"ctx.knob_manager.knob_names: {ctx.knob_manager.knob_names}")
+    print(f"ctx.knob_manager.candidates: {ctx.knob_manager.candidates}")
+    print(f"ctx.knob_manager.solver.vals: {ctx.knob_manager.solver.vals}")
+    print("===============================")

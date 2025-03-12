@@ -182,7 +182,7 @@ class KnobManager:
             strs = "&NE(%s,%s)"%(a, b)
             self.constraint_descs += strs
 
-    def addLT(self, a, b):
+    def addLT(self, a, b): # 这个好像没有用
         if not self.is_building:
             return
         assert isinstance(a, str)

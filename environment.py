@@ -26,7 +26,8 @@ class Env:
         build_kwargs = get()
         del get
         self.build_kwargs = build_kwargs
-        print(self.build_kwargs)
+        print(f"self.build_kwargs: {self.build_kwargs}")
+        #print(self.build_kwargs)
 
     def tune(self, task_name, pretrained = False):
         self.init_dir()
