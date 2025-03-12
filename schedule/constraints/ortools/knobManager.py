@@ -232,11 +232,11 @@ class KnobManager:
         idxs = []
         for idx, v in enumerate(candidates):
             idx_name = valname + '_cand%d'%idx
-            # should be other type
-            if "P#" in valname:
+            # should be other type 下面这几行代码好像有问题
+            '''if "P#" in valname:
                 idx_name = idx_name.replace("P#", "O#")
             else:
-                idx_name = "O#" + idx_name
+                idx_name = "O#" + idx_name'''
             self.define_value(idx_name, 0, 1, 0)
             self.solver.primitives.append(EQ([valname, candidates[idx]], cond = idx_name))
             idxs.append(idx_name)
@@ -270,7 +270,7 @@ class KnobManager:
         elif ax in self.axis_ori_lenth and not ax in self.staged_fused_axes:
             res = self.axis_ori_lenth[ax]
         else:
-            m, n = ax.split("_")
+            m, n = ax.rsplit('_', maxsplit=1)  #原来的不能分割A.shared.wmma.matrix_b_ax0
             key = genKey("L", m, n)
             extent = self.get_ax_key_extent(key)
             res = self.define_value(ax, 1, extent, 1)

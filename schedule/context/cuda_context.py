@@ -46,10 +46,11 @@ class CUDACOREContext(Context):
         assert self.is_tensorcore
         assert 'shared' in stage_name
         assert stage_name in self.axis_map.keys()
-        gpu_kwargs = self.build_kwargs['check_gpu']
+        gpu_kwargs = self.build_kwargs['checks']['gpu']
         # For float16 only 
         mem_size = int(gpu_kwargs['max_shared_memory_per_block'] / 2)
-        prod_name = genKey("V", stage_name, var_name = 'shared_mem_size')
+        # prod_name = genKey("V", stage_name, var_name = 'shared_mem_size')
+        prod_name = stage_name + "_shared_mem_size"
         self.knob_manager.define_value(prod_name, 1, mem_size, 1)
         to_prod = []
         stage = mapNametoStage(s, stage_name)
@@ -57,7 +58,8 @@ class CUDACOREContext(Context):
             if idx == len(stage.op.axis) - 1 and stage_name in self.align_sizes:
                 to_prod.append(self.align_sizes[stage_name])
                 continue
-            key = genKey("L", stage_name, ax.var.name)
+            #key = genKey("L", stage_name, ax.var.name)
+            key = stage_name + "_" + ax.var.name
             to_prod.append(key)
         self.knob_manager.addProd(to_prod, prod_name)
         return prod_name
@@ -71,7 +73,7 @@ class CUDACOREContext(Context):
                 self.addSched('compute_inline', stage.op.name, s)
 
     def getThreadLimit(self, thread_type):
-        gpu_kwargs = self.build_kwargs['check_gpu']
+        gpu_kwargs = self.build_kwargs['checks']['gpu']      # 此处修改是由于tvm版本导致的
         if thread_type == 'threadIdx.x':
             return gpu_kwargs['max_thread_x']
         if thread_type == 'threadIdx.y':

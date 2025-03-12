@@ -21,12 +21,11 @@ class Env:
             shutil.rmtree(self.config.log_dir)
         mkdir(self.config.log_dir)
 
-    def get_build_kwargs(self, task):
+    def get_build_kwargs(self, task):  # 负责为不同的硬件平台建立正确的编译环境，若是GPU设备，则获取GPU的硬件限制信息，若是Hexagon设备，则添加VTCM(Vector TCM内存)容量信息，并将这些信息传递给编译器，确保生成的代码符合目标硬件的约束条件
         get = create_kwargs_ctx(task, self.runner.measure_option)
         build_kwargs = get()
         del get
         self.build_kwargs = build_kwargs
-        print(f"self.build_kwargs: {self.build_kwargs}")
         #print(self.build_kwargs)
 
     def tune(self, task_name, pretrained = False):

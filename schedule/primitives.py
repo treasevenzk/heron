@@ -166,7 +166,7 @@ def compute_at(ctx, stage, consumer_stage, consumer_ax):
             )
     ctx.addSchedDesc(strs)
 
-def compute_inline(ctx, stage):  # 这个调度原语没有用
+def compute_inline(ctx, stage):
     stage.compute_inline()
     strs = "s[%s].compute_line()\n"%(getStageName(stage))
     ctx.addSchedDesc(strs)

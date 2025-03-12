@@ -4,6 +4,7 @@ from Heron.utils import *
 from Heron.schedule.primitives import *
 from .sched_common import *
 from .ana_common import *
+import sys
 
 class TCStartOp(startOp):
     def fixAxesLength(self, s, stage_name, ctx):
@@ -22,7 +23,8 @@ class TCStartOp(startOp):
             if _type == 'r':
                 continue
             key = keys[int(_idx)]
-            ax_key = genKey("L", stage_name, str(ax.var.name))
+            #ax_key = genKey("L", stage_name, str(ax.var.name))
+            ax_key = stage_name + "_" + str(ax.var.name)
             coe[ax_key] = key
         return coe
 
@@ -136,15 +138,18 @@ class storageAlignOp(schedOp):
         stage = mapNametoStage(s, stage_name)
         ax = stage.op.axis[-1]
         # Factor
-        fkey = genKey("L", stage_name, str(ax.var.name))
+        #fkey = genKey("L", stage_name, str(ax.var.name))  这个写法是错误
+        fkey = stage_name + "_" + str(ax.var.name)
         factor = ctx.knob_manager.get_val(fkey)
         # Offset
-        okey = genKey("P", stage_name, param_name = "offset")
+        #okey = genKey("P", stage_name, param_name = "offset")
+        okey = stage_name + "_offset"
         ctx.knob_manager.define_value(okey, 0, 48, 0, True)
         ctx.knob_manager.addCandidates(okey, [0, 8, 16, 24, 32, 48])
         offset = ctx.knob_manager.get_val(okey)
         # Align size
-        key = genKey("P", stage_name, param_name = "align_size")
+        #key = genKey("P", stage_name, param_name = "align_size")
+        key = stage_name + "_align_size"
         ctx.knob_manager.define_value(key, 1, 88888888, 1)
         ctx.knob_manager.addSUM(key, [fkey, okey])
         ctx.align_sizes[stage_name] = key
@@ -175,7 +180,8 @@ class GPUfinishOp(finishOp):
         pos_extent = len(ctx.compute_pos_names[stage_name]) - 1
         assert pos_extent > 0
         # Shared pos
-        shared_pos_key = genKey("P", stage_name, param_name = "shared_pos")
+        #shared_pos_key = genKey("P", stage_name, param_name = "shared_pos")
+        shared_pos_key = stage_name + "_shared_pos"
         if shared_pos_key in ctx.knob_manager.knob_names:
             low = ctx.knob_manager.solver.vals[shared_pos_key].low 
             up = ctx.knob_manager.solver.vals[shared_pos_key].up 
@@ -195,7 +201,8 @@ class GPUfinishOp(finishOp):
                 ctx.knob_manager.addEQ(shared_pos_key, pos)
 
         # Local pos
-        local_pos_key = genKey("P", stage_name, param_name = "local_pos")
+        #local_pos_key = genKey("P", stage_name, param_name = "local_pos")
+        local_pos_key = stage_name + "_local_pos"
         if local_pos_key in ctx.knob_manager.knob_names:
             low = ctx.knob_manager.solver.vals[local_pos_key].low 
             up = ctx.knob_manager.solver.vals[local_pos_key].up 

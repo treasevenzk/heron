@@ -5,6 +5,7 @@ from Heron.schedule.primitives import *
 from .sched_common import *
 from .gpu_common import *
 from .ana_common import *
+import sys
 
 class GPUvectorizeOp(schedOp):
     def check(self, s, stage_name, ctx):
@@ -24,13 +25,15 @@ class GPUvectorizeOp(schedOp):
         stage, ax = self.check(s, stage_name, ctx)
         candidates = self.getVecCandidates(stage.op.tag)
         ctx.addSchedDesc("\n## Vectorize \n")
-        knob_key = genKey("P", stage_name, param_name = "vectorize")
+        #knob_key = genKey("P", stage_name, param_name = "vectorize")
+        knob_key = stage_name + "_vectorize"
         ctx.knob_manager.define_value(knob_key, 1, candidates[-1], 1, True)
         ctx.knob_manager.addCandidates(knob_key, candidates)
         tile_op = TileSpatialOp("tileSpatial")
         outer, inner, keys = tile_op.perform(s, stage_name, ctx)
         fused = fuse(ctx, stage, inner)
-        vec_key = genKey("L", stage_name, str(fused.var.name))
+        #vec_key = genKey("L", stage_name, str(fused.var.name))
+        vec_key = stage_name + "_" + str(fused.var.name)
         ctx.knob_manager.addEQ(vec_key, knob_key)
         vectorize(ctx, stage, fused)
 
@@ -82,7 +85,8 @@ class defaultSchedOp(schedOp):
 
         # vectorize
         candidates = self.getVecCandidates(stage.op.tag)
-        key = genKey("P", stage_name, param_name = "vectorize")
+        #key = genKey("P", stage_name, param_name = "vectorize")
+        key = stage_name + "_vectorize" 
         ctx.knob_manager.define_value(key, 1, candidates[-1], 1, True)
         ctx.knob_manager.addCandidates(key, candidates)
         p = ctx.knob_manager.get_val(key)
@@ -116,7 +120,8 @@ class defaultSharedLoadSchedOp(schedOp):
         fuseall_op = fuseAllOp('fuseAll')
         fused = fuseall_op.perform(s, stage_name, ctx)
         # vectorize
-        key = genKey("P", stage_name, param_name = "vectorize")
+        #key = genKey("P", stage_name, param_name = "vectorize")
+        key = stage_name + "_vectorize"
         ctx.knob_manager.define_value(key, 1, 8, 1, True)
         ctx.knob_manager.addCandidates(key, [1, 2, 4, 8])
         p = ctx.knob_manager.get_val(key)
