@@ -84,7 +84,8 @@ class Context:
                 dom_min, dom_extent = ax.dom.min, ax.dom.extent
                 assert isinstance(dom_min, tvm.tir.expr.IntImm)
                 assert isinstance(dom_extent, tvm.tir.expr.IntImm)
-                key = genKey("L", stage.op.name, ax.var.name)
+                #key = genKey("L", stage.op.name, ax.var.name)
+                key = stage.op.name + "_" + ax.var.name
                 self.knob_manager.axis_ori_lenth[key] = int(dom_extent) - int(dom_min)
                 if stage_fused and ax.iter_type == ax.DataPar:
                     self.knob_manager.staged_fused_axes.add(key)

@@ -14,7 +14,7 @@ class schedOp:
         keys = []; outer = []; inner = [] 
         for ax in axes:
             # key = genKey("P", stage_name, str(ax.var.name), param_name = self.name)
-            key = stage_name + "_" + self.name  # 上面那种写法是错误的，现在的写法是正确的
+            key = stage_name + str(ax.var.name) + "_" + self.name  # 上面那种写法是错误的，现在的写法是正确的
             up = ctx.knob_manager.get_axis_extent(s, stage_name, ax.var.name)
             ctx.knob_manager.define_value(key, 1, up, 1, True)
             ctx.knob_manager.addRawCandidates(key, 
@@ -267,7 +267,7 @@ class startOp(schedOp):
         ctx.knob_manager.define_value(dst_key, 1, root_ax.dom.extent.value, 1)
         if dst_key in coe:
             # tmp_key = genKey("O", stage_name, ax_name, others = "tmp")
-            tmp_key = stage_name + "_" + ax_name + "_tmp" # 这种写法不知道正不正确，暂时先修改成这样
+            tmp_key = stage_name + "_tmp" + ax_name  # 这种写法才是正确的
             ctx.knob_manager.define_value(tmp_key, 1, root_ax.dom.extent.value, 1)
             ctx.knob_manager.addSelect(select_length_keys, pos_key, tmp_key)
             ctx.knob_manager.addProd([tmp_key, coe[dst_key]], dst_key)

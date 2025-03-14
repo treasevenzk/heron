@@ -62,7 +62,10 @@ class KnobManager:
         root_keys = self.get_axis_roots(axkey)
         # Only split non-fused axes
         assert len(root_keys) == 1
-        root = root_keys[0]
+        #root = root_keys[0] 字符串转变由原来的'L#ST:dense,AX:i.inner'转变为'dense_i.inner'
+        a, b, c = root_keys[0].split(":")
+        m, n = b.split(",")
+        root = m + "_" + c
         return self.axis_ori_lenth[root]
 
 
