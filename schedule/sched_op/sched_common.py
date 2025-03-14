@@ -267,7 +267,7 @@ class startOp(schedOp):
         ctx.knob_manager.define_value(dst_key, 1, root_ax.dom.extent.value, 1)
         if dst_key in coe:
             # tmp_key = genKey("O", stage_name, ax_name, others = "tmp")
-            tmp_key = stage_name + "_tmp" + ax_name  # 这种写法才是正确的
+            tmp_key = stage_name + "_tmp_" + ax_name  # 这种写法才是正确的
             ctx.knob_manager.define_value(tmp_key, 1, root_ax.dom.extent.value, 1)
             ctx.knob_manager.addSelect(select_length_keys, pos_key, tmp_key)
             ctx.knob_manager.addProd([tmp_key, coe[dst_key]], dst_key)
