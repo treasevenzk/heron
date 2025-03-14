@@ -14,7 +14,7 @@ class schedOp:
         keys = []; outer = []; inner = [] 
         for ax in axes:
             # key = genKey("P", stage_name, str(ax.var.name), param_name = self.name)
-            key = stage_name + str(ax.var.name) + "_" + self.name  # 上面那种写法是错误的，现在的写法是正确的
+            key = stage_name + str(ax.var.name) + self.name  # 上面那种写法是错误的，现在的写法是正确的
             up = ctx.knob_manager.get_axis_extent(s, stage_name, ax.var.name)
             ctx.knob_manager.define_value(key, 1, up, 1, True)
             ctx.knob_manager.addRawCandidates(key, 
