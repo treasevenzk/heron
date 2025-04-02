@@ -102,9 +102,9 @@ class KnobManager:
             return
         self.solver.primitives.append(ProdTwo([self.get_ax(ax_key), [self.get_ax(axo_key), self.get_ax(axi_key)]]))
         self.solver.primitives.append(EQ([self.get_ax(axo_key), knob]))
-        m, n = axo_key.split("_")
+        m, n = axo_key.rsplit("_", maxsplit=1)
         axo_key = genKey("L", m, n)
-        m, n = axi_key.split("_")
+        m, n = axi_key.rsplit("_", maxsplit=1)
         axi_key = genKey("L", m, n)
         self.axis_brother[axi_key] = axo_key
         self.axis_brother[axo_key] = axi_key

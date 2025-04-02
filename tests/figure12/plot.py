@@ -24,13 +24,13 @@ def get_perfs(method):
             max_perfs.append(max(perf, max_perfs[-1]))
         else:
             max_perfs.append(perf)
-    return perfs[:1000], max_perfs[:1000]
+    return perfs[:500], max_perfs[:500]
 
 
 
 
 plt.figure()
-x = np.arange(1000)
+x = np.arange(500)
 all_maxs = []
 for method in ["SA",  "GA", "CRAND", "CGA"]:
     perfs, maxs = get_perfs(method)

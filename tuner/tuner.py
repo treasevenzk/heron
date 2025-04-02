@@ -58,6 +58,7 @@ class Tuner:
                 select_num = self.config.measure_time_per_round
 
             print("== Current Round ", iter_no)
+            print(f"select num : {select_num}")
             sample_s = time.time()
             initial_population = self.UpdatePopulation(env, population)
             population, all_pop = self.optimize(env, initial_population, stat, start_time)
@@ -65,8 +66,13 @@ class Tuner:
 
             measure_s = time.time()
             pop = self.epsilon_select(env, all_pop, 0.6, select_num)
+            if pop != []:
+                print("true")
+            else:
+                print("false")
             if do_measure and pop != []:
                 samples = self.FilterSamples(pop, env)
+                print(f"hardware samples number: {len(samples)}")
                 self.measure(samples, env)  # 实际在硬件上测量
             measure_e = time.time()
 

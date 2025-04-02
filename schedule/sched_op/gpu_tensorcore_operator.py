@@ -301,12 +301,12 @@ class addCacheTensorCoreOp(schedOp):
         out = ctx.tensor_dict[stage_name]
         addcacheshared_op = addCacheReadSharedOp("addCacheReadShared")
         # Cache write for wmma units
-        out_wmma = cache_write(ctx, out, "wmma.accumulator", s)
-        shares = addcacheshared_op.perform(s, out_wmma.name, ctx)
+        out_wmma = cache_write(ctx, out, "wmma.accumulator", s) # 创建WMMA累加器
+        shares = addcacheshared_op.perform(s, out_wmma.name, ctx) # 创建输入的共享内存缓存
         # Cache read shared for operands
         for idx, inp in enumerate(inputs):
             shared = shares[idx]
-            in_wmma = cache_read(ctx, shared, wmma_names[idx], out_wmma, s)
+            in_wmma = cache_read(ctx, shared, wmma_names[idx], out_wmma, s) # 创建WMMA输入片段
             self.define_com_pos(in_wmma.name, s[out_wmma], 'local_pos', ctx)
             # Tensorize for load
             if inp.name == ctx.tensorize_info['loadA'][0]:
@@ -317,7 +317,7 @@ class addCacheTensorCoreOp(schedOp):
                 raise ValueError("%s is expected to be either\
                         tensorcore \'loadA\' or \'loadB\'"%inp.name)
         # Cache read shared
-        out_shares = addcacheshared_op.perform(s, out.name, ctx)
+        out_shares = addcacheshared_op.perform(s, out.name, ctx) # 创建输出的共享内存缓存
         out_shared = out_shares[0]
         self.define_com_pos(out_wmma.name, s[out_shared], 'local_pos', ctx)
         # Tensorize for compute

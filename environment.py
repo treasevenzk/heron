@@ -6,6 +6,7 @@ from Heron.runner.runner import Runner
 from Heron.schedule.sched_op import get_op_methods
 from .tuner import *
 from tvm.autotvm.measure.measure import create_measure_batch, MeasureInput
+import sys
 
 class Env:
     def __init__(self, measure_option, config):
