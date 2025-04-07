@@ -10,6 +10,7 @@ from Heron.schedule.sched_op import get_op_methods, sched_via_rule
 from Heron.schedule.constraints import KnobManager
 from Heron.schedule.context import buildContext
 import sys
+import copy
 
 class Task:
     def __init__(self, name, opfunc, args, target, target_host):
@@ -65,6 +66,7 @@ class Task:
       # print(tvm.lower(s, ctx.input_tensors + outs))
         print(f"ctx.knob_manager.llm_sched_val: {ctx.knob_manager.llm_sched_val}")
         print(f"number llm_sched_val: {len(ctx.knob_manager.llm_sched_val)}")
+        self.knob_manager.llm_sched_val = copy.deepcopy(ctx.knob_manager.llm_sched_val)
         self.sched_desc = ctx.sched_desc
         self.knob_manager.is_building = False
         valid, _ = self.knob_manager.solver.solve({}, {})

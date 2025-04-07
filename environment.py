@@ -35,6 +35,9 @@ class Env:
         self.task.make_stage_schedules()
         self.runner.measure_batch = create_measure_batch(self.task, self.runner.measure_option)
         self.dump_schedule()
+        print(f"self.task.knob_manager.llm_sched_val: {self.task.knob_manager.llm_sched_val}")
+        print(self.task.sched_desc)
+        sys.exit(1)
         if pretrained:
             res = self.tuner.run_with_pretrained(self)
         else:
