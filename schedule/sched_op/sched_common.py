@@ -17,6 +17,7 @@ class schedOp:
             key = stage_name + str(ax.var.name) + self.name  # 上面那种写法是错误的，现在的写法是正确的
             up = ctx.knob_manager.get_axis_extent(s, stage_name, ax.var.name)
             ctx.knob_manager.define_value(key, 1, up, 1, True)
+            ctx.knob_manager.llm_sched_val[key] = {'min': 1, 'max': up}
             ctx.knob_manager.addRawCandidates(key, 
                     getDefSplitCandidates(s, stage_name, ax.var.name, ctx.knob_manager))
             tile_size = ctx.knob_manager.get_val(key)
@@ -91,6 +92,7 @@ class schedOp:
         # key = genKey("P", stage.op.name, param_name = pos_type)
         key = stage.op.name + "_" + pos_type # 上面那种写法是错误的，现在的写法是正确的
         ctx.knob_manager.define_value(key, 0, 10, 0, True)
+        ctx.knob_manager.llm_sched_val[key] = {'min': 0, 'max': 10}
         pos_name = stage.leaf_iter_vars[-1].var.name
         ctx.compute_poses[src_stage_name] = (stage.op.name, key)
         if stage.op.name not in ctx.compute_pos_names.keys():
@@ -264,7 +266,11 @@ class startOp(schedOp):
 
         #dst_key = genKey("L", stage_name, ax_name)
         dst_key = stage_name + "_" + ax_name
+        stage = mapNametoStage(s, stage_name) ### 这里的改动是为了找到storageAlign的调度参数
+        str_ax = stage.op.axis[-1]
         ctx.knob_manager.define_value(dst_key, 1, root_ax.dom.extent.value, 1)
+        if stage_name in ctx.shared_load_stages and str(str_ax.var.name) == ax_name:
+            ctx.knob_manager.llm_sched_val[dst_key] = {'min': 1, 'max': root_ax.dom.extent.value}
         if dst_key in coe:
             # tmp_key = genKey("O", stage_name, ax_name, others = "tmp")
             tmp_key = stage_name + "_tmp_" + ax_name  # 这种写法才是正确的
@@ -337,6 +343,7 @@ class unrollPragmaOp(schedOp):
         # unroll_key = genKey("P", stage_name, param_name = "unroll_pragma")
         unroll_key = stage_name + "_unroll_pragma" 
         ctx.knob_manager.define_value(unroll_key, 0, 5, 0, True)
+        ctx.knob_manager.llm_sched_val[unroll_key] = {'min': 0, 'max': 5}
         ctx.knob_manager.addRawCandidates(unroll_key, [0, 1, 2, 3, 4, 5])
         axes = stage.leaf_iter_vars
         # tile for unroll

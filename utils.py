@@ -192,12 +192,14 @@ def getTensorName(tensor):
 
 def printAxes(s, stage_name, ctx):
     stage = mapNametoStage(s, stage_name)
+    ctx.knob_manager.sched_val_print = False
     for ax in stage.leaf_iter_vars:
         key = stage_name  + "_" + ax.var.name
         if key in ctx.knob_manager.solver.vals.keys() and  ctx.knob_manager.get_val(key) != None:
             ctx.addSchedDesc("\n# Var %s length %d"%(getAxname(ax), ctx.knob_manager.get_val(key)))
         else:
             ctx.addSchedDesc("\n# Var %s"%(getAxname(ax)))
+    ctx.knob_manager.sched_val_print = True
 
 def genTCShape(ctx):
     # wmma_m, wmma_k, wmma_n

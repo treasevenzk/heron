@@ -14,6 +14,7 @@ import Heron.runner as HeronRunner
 from Heron.config import configFromFile
 import Heron.ops.cuda as heron_cuda
 import Heron.ops.x86 as heron_cpu
+import sys
 
 
 def makeConfig(args):
@@ -40,6 +41,10 @@ def run(op_name, task_name, params, env):
     if config.tuned == "":
         config.tuned = os.path.join(config.log_dir, 'records.txt')
     sch, args = task.apply_best(config.tuned)
+    keys_a = set(task.knob_manager.solver.vals.keys())
+    keys_b = set(task.knob_manager.sched_val.keys())
+    print(f"task.knob_manager.sched_val: {task.knob_manager.sched_val}")
+    print(f"number sched_vals: {len(task.knob_manager.sched_val)}")
 
     with tvm.target.Target(config.target_name):
         s, args = task.instantiate(task.knob_manager)

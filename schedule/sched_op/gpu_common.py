@@ -34,6 +34,8 @@ class tileBindOp(schedOp):
         defined = self.thread_type in ctx.knob_manager.solver.vals.keys()
         if not defined:
             ctx.knob_manager.define_value(self.thread_type, 1, limit, 1)
+            if self.thread_type != "blockIdx.x":
+                ctx.knob_manager.llm_sched_val[self.thread_type] = {'min': 1, 'max': limit}
         ctx.knob_manager.addProd(keys, self.thread_type)
         if self.thread_type == "threadIdx.x" and ctx.is_tensorcore:
             ctx.knob_manager.addEQ(self.thread_type, 32)
@@ -145,6 +147,7 @@ class storageAlignOp(schedOp):
         #okey = genKey("P", stage_name, param_name = "offset")
         okey = stage_name + "_offset"
         ctx.knob_manager.define_value(okey, 0, 48, 0, True)
+        ctx.knob_manager.llm_sched_val[okey] = {'min': 0, 'max': 48}
         ctx.knob_manager.addCandidates(okey, [0, 8, 16, 24, 32, 48])
         offset = ctx.knob_manager.get_val(okey)
         # Align size

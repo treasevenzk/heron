@@ -29,6 +29,11 @@ class KnobManager:
         self.solved_knob_vals_genotype = {}
         self.solved_knob_vals_phenotype = {}
         self.candidates = {}
+        self.sched_cand = {}
+        self.sched_val = {}
+        self.sched_val_state = False
+        self.sched_val_print = True
+        self.llm_sched_val = {}
         self._valid = False
 
         self.constraint_descs = ""
@@ -80,6 +85,9 @@ class KnobManager:
             return self.solver.vals[name].defv
         else:
             if name in self.solved_knob_vals_phenotype.keys():
+                if self.sched_val_state:
+                    if self.sched_val_print:
+                        self.sched_val[name] = 1
                 return self.solved_knob_vals_phenotype[name]
             else:
                 return None
@@ -137,6 +145,7 @@ class KnobManager:
             for i in range(len(src) - 2):
                 temp = str(a) + '_' + str(src[i + 1])
                 self.define_value(temp, 1, up, 1)
+                self.sched_cand[temp] = 1
                 args = [temp, [a, src[i + 1]]]
                 self.solver.primitives.append(ProdTwo(args))
                 a = temp
@@ -210,6 +219,7 @@ class KnobManager:
             #assert "P#" in knob_key
             #key = key.replace("P#", "O#")
             self.define_value(key, 0, 1, 0)  ### 这里写的还是有问题
+            self.sched_cand[key] = 1
             self.solver.primitives.append(EQ([val_key, cand_keys[i]], cond = key))
             self.solver.primitives.append(EQ([knob_key, i], cond = key))
             keys.append(key)
@@ -240,6 +250,7 @@ class KnobManager:
                 idx_name = idx_name.replace("P#", "O#")
             else:
                 idx_name = "O#" + idx_name'''
+            self.sched_cand[idx_name] = 1
             self.define_value(idx_name, 0, 1, 0)
             self.solver.primitives.append(EQ([valname, candidates[idx]], cond = idx_name))
             idxs.append(idx_name)

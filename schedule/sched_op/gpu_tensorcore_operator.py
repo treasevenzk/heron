@@ -67,6 +67,8 @@ class defaultSchedOp(schedOp):
         defined =  name in ctx.knob_manager.solver.vals.keys()
         if not defined:
             ctx.knob_manager.define_value(name, 1, limit, 1)
+            if name != "blockIdx.x":
+                ctx.knob_manager.llm_sched_val[name] = {'min': 1, 'max': limit}
 
     def getVecCandidates(self, tag):
         ori_res = [1, 2, 4, 8]
@@ -88,6 +90,7 @@ class defaultSchedOp(schedOp):
         #key = genKey("P", stage_name, param_name = "vectorize")
         key = stage_name + "_vectorize" 
         ctx.knob_manager.define_value(key, 1, candidates[-1], 1, True)
+        ctx.knob_manager.llm_sched_val[key] = {'min': 1, 'max': candidates[-1]}
         ctx.knob_manager.addCandidates(key, candidates)
         p = ctx.knob_manager.get_val(key)
         a_o, a_i = split(ctx, stage, fused, key, factor = p, update_dep_graph = False)
@@ -123,6 +126,7 @@ class defaultSharedLoadSchedOp(schedOp):
         #key = genKey("P", stage_name, param_name = "vectorize")
         key = stage_name + "_vectorize"
         ctx.knob_manager.define_value(key, 1, 8, 1, True)
+        ctx.knob_manager.llm_sched_val[key] = {'min': 1, 'max': 8}
         ctx.knob_manager.addCandidates(key, [1, 2, 4, 8])
         p = ctx.knob_manager.get_val(key)
         a_o, a_i = split(ctx, stage, fused, key, factor = p, update_dep_graph = False)
@@ -289,11 +293,14 @@ class addCacheTensorCoreOp(schedOp):
         keyn = "wmma_n"
         ctx.knob_manager.define_value(keym, 8, 32, 16, True)
         ctx.knob_manager.addCandidates(keym, [8, 16, 32])
+        ctx.knob_manager.llm_sched_val[keym] = {'min': 8, 'max': 32}
 
         ctx.knob_manager.define_value(keyk, 16, 16, 16)
+        ctx.knob_manager.llm_sched_val[keyk] = {'min': 16, 'max': 16}
 
         ctx.knob_manager.define_value(keyn, 8, 32, 16, True)
         ctx.knob_manager.addCandidates(keyn, [8, 16, 32])
+        ctx.knob_manager.llm_sched_val[keyn] = {'min': 8, 'max': 32}
 
         keys = [keym, keyn, keyk]
         ctx.knob_manager.addProd(keys, 16 * 16 * 16)

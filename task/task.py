@@ -41,6 +41,7 @@ class Task:
         self.knob_manager.solved_knob_vals_phenotype = sorted_pairs[0][1]
         self.knob_manager.runtime_perf = sorted_pairs[0][0]
         self.knob_manager.is_building = False
+        self.knob_manager.sched_val_state = True
         return self.instantiate(self.knob_manager)
 
     def apply_sample(self, sample):
@@ -62,6 +63,8 @@ class Task:
         ctx.init_tensor_dict(outs)
         sched_via_rule(self.config.codegen_type, ctx, s)
       # print(tvm.lower(s, ctx.input_tensors + outs))
+        print(f"ctx.knob_manager.llm_sched_val: {ctx.knob_manager.llm_sched_val}")
+        print(f"number llm_sched_val: {len(ctx.knob_manager.llm_sched_val)}")
         self.sched_desc = ctx.sched_desc
         self.knob_manager.is_building = False
         valid, _ = self.knob_manager.solver.solve({}, {})
