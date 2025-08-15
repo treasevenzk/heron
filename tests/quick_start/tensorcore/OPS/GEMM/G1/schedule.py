@@ -145,8 +145,8 @@ Tensor(shape=[16, 16], op.name=wmma_A), Tensor(shape=[16, 16], op.name=wmma_B), 
 #==--------- Start schedule STAGE B.shared.wmma.matrix_b ----------==#
 s[B_shared_wmma_matrix_b].compute_at(s[dense_wmma_accumulator], k_o)
 
-# Var ax0
-# Var ax1
+# Var ax0 length 1
+# Var ax1 length 1
 ## Tensor core loadB
 ax0_o, ax0_i = s[B_shared_wmma_matrix_b].split(ax0, factor = 16)
 ax1_o, ax1_i = s[B_shared_wmma_matrix_b].split(ax1, factor = 16)

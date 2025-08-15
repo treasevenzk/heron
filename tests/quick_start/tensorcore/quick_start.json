@@ -11,7 +11,7 @@
         "in_dtype": "float16",
         "out_dtype": "float16",
         "cases"   :{
-             "G1": ["gemm", [64, 64, 64]]
+             "G1": ["gemm", [32, 2048, 1000]]
         }
     }
 }
