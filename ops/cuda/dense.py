@@ -46,7 +46,7 @@ def heron_dense(ctx, M, K, N, in_dtype, out_dtype):
             'A.shared' : ['s_0', 'r_0'],
             'A.shared.wmma.matrix_a' : ['s_0', 'r_0'],
             'B.shared' : ['s_1', 'r_0'],
-            'B.shared.wmma_matrix_b' : ['s_1', 'r_0'],
+            'B.shared.wmma.matrix_b' : ['s_1', 'r_0'],
             'dense.wmma.accumulator.shared' : ['s_0', 's_1'],
             'dense.wmma.accumulator' : ['s_0', 's_1']
             }
